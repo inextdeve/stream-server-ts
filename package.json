@@ -1,0 +1,23 @@
+{
+  "name": "stream-server-ts",
+  "version": "1.0.0",
+  "description": "Stream server with typescript",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "inext.dev [Yassine Farroud]",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.14.8",
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "@types/find-remove": "^2.0.3",
+    "@types/fluent-ffmpeg": "^2.1.24",
+    "find-remove": "^4.1.0",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}
