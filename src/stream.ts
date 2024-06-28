@@ -1,8 +1,10 @@
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import Ffmpeg, { FfmpegCommand } from "fluent-ffmpeg";
 import ffmpeg from "fluent-ffmpeg";
 import findRemoveSync from "find-remove";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +30,7 @@ class Stream {
   private analyticType: number | string | undefined;
 
   constructor(props: StreamProps) {
+    console.log(props.url);
     this.url = props.url;
     this.codecName = props.codecName;
     this.soundReception = props.soundReception;

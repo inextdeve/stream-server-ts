@@ -3,20 +3,27 @@
   "version": "1.0.0",
   "description": "Stream server with typescript",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node dist/server.js",
-    "build": "tsc"
+    "dev": "npx ts-node src/index.ts",
+    "compile": "tsc --watch",
+    "start": "nodemon dist/index.js"
   },
   "keywords": [],
   "author": "inext.dev [Yassine Farroud]",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.14.8",
+    "@types/node": "^20.14.9",
+    "prisma": "^5.16.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.2"
   },
   "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@prisma/client": "^5.16.1",
     "@types/find-remove": "^2.0.3",
     "@types/fluent-ffmpeg": "^2.1.24",
+    "dotenv": "^16.4.5",
     "find-remove": "^4.1.0",
     "fluent-ffmpeg": "^2.1.3"
   }

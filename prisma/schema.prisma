@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model analyticmodules {
+  id                    Int                     @id @default(autoincrement())
+  name                  String?                 @db.VarChar(255)
+  camera_analyticmodule camera_analyticmodule[]
+}
+
+model camera_analyticmodule {
+  camera          Int
+  analyticmodule  Int
+  analyticmodules analyticmodules @relation(fields: [analyticmodule], references: [id], onDelete: Cascade, map: "cons_analyticmodule")
+  cameras         cameras         @relation(fields: [camera], references: [id], onDelete: Cascade, map: "cons_camera")
+
+  @@id([camera, analyticmodule])
+  @@index([analyticmodule], map: "cons_analyticmodule")
+}
+
+model cameras {
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @db.VarChar(255)
+  address               String?                 @default("") @db.VarChar(125)
+  type                  String?                 @default("camera") @db.VarChar(50)
+  model                 String?                 @default("rtsp") @db.VarChar(50)
+  streamServer          String?                 @default("") @db.VarChar(5)
+  brand                 String?                 @default("html") @db.VarChar(50)
+  auth                  String?                 @default("{\"username\": \"\", password: \"\"}") @db.VarChar(400)
+  streamLink            String?                 @default("") @db.VarChar(255)
+  streams               String?                 @default("[{ \"format\": \"h264\" }]") @db.VarChar(255)
+  rights                String?                 @default("[{ \"group\": \"administrators\", \"surveillance\": true, \"archive\": true }]") @db.VarChar(255)
+  sound                 Boolean?                @default(false)
+  narrowBandwidth       Boolean?                @default(false)
+  archive               String?                 @default("{\"recAndArch\": false,\"recMode\": \"alwayson\"}") @db.VarChar(255)
+  motionDetector        Boolean?                @default(false)
+  analytics             String?                 @default("{\"1\": false, \"2\": false, \"3\": false}") @db.VarChar(255)
+  enabled               Boolean?                @default(false)
+  camera_analyticmodule camera_analyticmodule[]
+}
+
+model servers {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(255)
+  address  String? @default("") @db.VarChar(125)
+  port     Int?    @default(8080)
+  protocol String? @default("http") @db.VarChar(7)
+}
+
+model users {
+  userId    BigInt  @id @default(autoincrement())
+  firstName String? @db.VarChar(50)
+  lastName  String? @db.VarChar(50)
+  username  String? @db.VarChar(50)
+  password  String? @db.VarChar(255)
+}
