@@ -8,14 +8,11 @@ import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import stream from "./api/routes/stream.js";
+import api from "./api/routes/api.js";
 import removeSubfolders from "./utils/utils.js";
-import { StreamApp } from "./core/index.js";
+import { streamApp } from "./core/index.js";
 
-const streamApp = new StreamApp();
-
-streamApp.run();
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url)).split("/dist")[0];
 
 dotenv.config();
 
@@ -28,17 +25,18 @@ app.set("view engine", "ejs");
 
 app.use("/stream", stream);
 
+app.use("/api", api);
+
 //test response
 app.get("/stream/test", (req, res) => {
   res.json({ success: true });
 });
 
 const server = app.listen(process.env.PORT, () => {
+  streamApp.run();
+
   // Remove all old streams
-  const targetDirectory = path.join(
-    __dirname.split("dist").join(""),
-    "streams"
-  ); // Replace 'your-directory-name' with your actual directory
+  const targetDirectory = path.join(__dirname, "streams"); // Replace 'your-directory-name' with your actual directory
   removeSubfolders(targetDirectory);
 });
 
@@ -53,6 +51,7 @@ new hls(server, {
       const getFile = () => {
         fs.access(__dirname + req.url, fs.constants.F_OK, function (err) {
           if (err) {
+            console.log(err);
             console.log("File not exist");
             return cb(null, false);
           }

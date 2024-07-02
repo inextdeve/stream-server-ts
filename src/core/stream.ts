@@ -6,13 +6,14 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import EventEmitter from "events";
-ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface StreamProps {
   url: string;
-  soundReception?: boolean;
+  soundReception?: boolean | null;
   codecName?: "h264";
   narrowBandwidthCamera?: boolean;
   id: number | string | undefined;
@@ -25,7 +26,7 @@ class Stream extends EventEmitter {
 
   private url: string;
   private codecName?: "h264";
-  private soundReception?: boolean;
+  private soundReception?: boolean | null;
   private narrowBandwidthCamera: boolean;
 
   private id: number | string | undefined;
@@ -127,7 +128,7 @@ class Stream extends EventEmitter {
         .run();
   }
 
-  public kill() {
+  public async kill() {
     if (this.ffmpeg instanceof Ffmpeg) this.ffmpeg.kill("SIGKILL");
   }
 }

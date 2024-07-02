@@ -1,6 +1,11 @@
 import { cameras } from "@prisma/client";
 import Stream from "./stream.js";
 import prisma from "../config/prisma.js";
+import removeSubfolders from "../utils/utils.js";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 class App {
   private streams: { [key: string]: Stream };
@@ -28,7 +33,7 @@ class App {
     }
 
     this.cameras = cameras.filter(
-      (camera) => Number(camera?.address?.length) > 2
+      (camera) => Number(camera?.address?.length) > 2 && camera.enabled
     );
   }
 
@@ -55,6 +60,7 @@ class App {
           id: camera.id,
           analyticType: 0,
           url: camera.address as string,
+          soundReception: camera.sound,
         });
 
         this.streams[camera.id]
@@ -70,18 +76,27 @@ class App {
   public async update(id: number) {
     if (!!this.streams[id] && this.streams[id] instanceof Stream) {
       this.streams[id].kill();
-      delete this.streams[id];
 
-      const camera = await this.fetchCamera(id);
+      try {
+        const camera = await this.fetchCamera(id);
 
-      this.streams[camera.id] = new Stream({
-        id: camera.id,
-        analyticType: 0,
-        url: camera.address as string,
-      });
+        if (!camera || !camera.enabled) {
+          delete this.streams[id];
+          return true;
+        }
 
-      this.streams[camera.id].run();
+        this.streams[camera.id] = new Stream({
+          id: camera.id,
+          analyticType: 0,
+          url: camera.address as string,
+        });
+        removeSubfolders(__dirname.split("dist")[0] + `/streams/${id}/0`);
+        this.streams[camera.id].run();
+      } catch (error) {
+        return false;
+      }
     }
+
     return true;
   }
 
@@ -96,8 +111,10 @@ class App {
     try {
       await this.fetchCameras();
       this.startStreams();
+      return true;
     } catch (error) {
       console.log(error);
+      return false;
     }
   }
 }
@@ -113,4 +130,5 @@ class App {
 // }, 8000);
 // app.run();
 
-export { App as StreamApp };
+const streamApp = new App();
+export { streamApp };
