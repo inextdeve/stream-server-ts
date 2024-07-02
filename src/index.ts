@@ -1,114 +1,74 @@
-import { cameras } from "@prisma/client";
-import Stream from "./stream.js";
-import prisma from "./config/prisma.js";
+import express from "express";
+//@ts-ignore
+import hls from "hls-server";
+import dotenv from "dotenv";
+import cors from "cors";
+import * as fs from "fs";
+import path from "path";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import stream from "./api/routes/stream.js";
+import removeSubfolders from "./utils/utils.js";
+import { StreamApp } from "./core/index.js";
 
-class App {
-  private streams: { [key: string]: Stream };
-  private cameras: cameras[];
+const streamApp = new StreamApp();
 
-  constructor() {
-    this.cameras = [];
-    this.streams = {};
-  }
+streamApp.run();
 
-  public async run() {
-    try {
-      await this.fetchCameras();
-      this.startStreams();
-    } catch (error) {
-      console.log(error);
-    }
-  }
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-  private async fetchCameras() {
-    const cameras = await prisma.cameras.findMany();
+dotenv.config();
 
-    if (cameras.length < 1) {
-      throw Error("There is no cameras");
-    }
+const app = express();
+//Setting Cors
+app.use(cors());
 
-    this.cameras = cameras.filter(
-      (camera) => Number(camera?.address?.length) > 2
-    );
-  }
+//Setting view engine to ejs
+app.set("view engine", "ejs");
 
-  private async fetchCamera(id: number) {
-    const camera = await prisma.cameras.findFirst({ where: { id } });
+app.use("/stream", stream);
 
-    if (camera === null) {
-      throw Error("There is no cameras");
-    }
+//test response
+app.get("/stream/test", (req, res) => {
+  res.json({ success: true });
+});
 
-    this.cameras = this.cameras.map((cam) => {
-      if (cam.id === id) {
-        return camera;
+const server = app.listen(process.env.PORT, () => {
+  // Remove all old streams
+  const targetDirectory = path.join(
+    __dirname.split("dist").join(""),
+    "streams"
+  ); // Replace 'your-directory-name' with your actual directory
+  removeSubfolders(targetDirectory);
+});
+
+new hls(server, {
+  provider: {
+    exists: (req: any, cb: (arg: any, arg1: boolean) => void) => {
+      const ext = req.url.split(".").pop();
+
+      if (ext !== "m3u8" && ext !== "ts") {
+        return cb(null, true);
       }
-      return cam;
-    });
-    return camera;
-  }
-
-  private startStreams() {
-    if (this.cameras.length)
-      this.cameras.forEach((camera) => {
-        this.streams[camera.id] = new Stream({
-          id: camera.id,
-          analyticType: 0,
-          url: camera.address as string,
+      const getFile = () => {
+        fs.access(__dirname + req.url, fs.constants.F_OK, function (err) {
+          if (err) {
+            console.log("File not exist");
+            return cb(null, false);
+          }
+          cb(null, true);
         });
-
-        this.streams[camera.id]
-          .on("error", (error, id) => {
-            this.streams[id].kill();
-            delete this.streams[id];
-          })
-          .run();
-      });
-    return this;
-  }
-
-  public async update(id: number) {
-    if (!!this.streams[id] && this.streams[id] instanceof Stream) {
-      this.streams[id].kill();
-      delete this.streams[id];
-
-      const camera = await this.fetchCamera(id);
-
-      this.streams[camera.id] = new Stream({
-        id: camera.id,
-        analyticType: 0,
-        url: camera.address as string,
-      });
-
-      this.streams[camera.id].run();
-    }
-    return true;
-  }
-
-  public async revalidate() {
-    for (let key in this.streams) {
-      this.streams[key].kill();
-    }
-
-    this.streams = {};
-    this.cameras = [];
-
-    try {
-      await this.fetchCameras();
-      this.startStreams();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-}
-
-const app = new App();
-
-// setTimeout(async () => {
-//   let c = 0;
-//   for (let key in app.streams) {
-//     c++;
-//   }
-//   console.log(c);
-// }, 8000);
-app.run();
+      };
+      //Get the m3u8
+      getFile();
+    },
+    getManifestStream: (req: any, cb: any) => {
+      const stream = fs.createReadStream(__dirname + req.url);
+      cb(null, stream);
+    },
+    getSegmentStream: (req: any, cb: any) => {
+      const stream = fs.createReadStream(__dirname + req.url);
+      cb(null, stream);
+    },
+  },
+});

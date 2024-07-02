@@ -6,7 +6,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import EventEmitter from "events";
-ffmpeg.setFfmpegPath("/opt/homebrew/bin/ffmpeg");
+ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
