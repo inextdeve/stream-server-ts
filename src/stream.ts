@@ -4,7 +4,9 @@ import ffmpeg from "fluent-ffmpeg";
 import findRemoveSync from "find-remove";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
+import fs from "fs";
+import EventEmitter from "events";
+ffmpeg.setFfmpegPath("/opt/homebrew/bin/ffmpeg");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -17,7 +19,7 @@ interface StreamProps {
   analyticType: number | string | undefined;
 }
 
-class Stream {
+class Stream extends EventEmitter {
   public path: string = "";
   private ffmpeg: FfmpegCommand | undefined = undefined;
 
@@ -30,6 +32,7 @@ class Stream {
   private analyticType: number | string | undefined;
 
   constructor(props: StreamProps) {
+    super();
     console.log(props.url);
     this.url = props.url;
     this.codecName = props.codecName;
@@ -54,11 +57,12 @@ class Stream {
     }
     this.ffmpeg
       .videoBitrate(1024)
-      .videoCodec(this.codecName || "libx264")
+      .videoCodec("libx264")
       .addOption("-hls_time", "10")
       // include all the segments in the list
       .addOption("-hls_list_size", "0")
       .on("error", (error) => {
+        this.emit("error", error.message, this.id);
         console.log("Error", error.message);
       })
       .once("codecData", () => {
@@ -66,7 +70,7 @@ class Stream {
         //Set interval for removing .ts file older than 30s
         setInterval(() => {
           findRemoveSync(
-            `${__dirname.split("api")[0]}streams/${this.id}/${
+            `${__dirname.split("dist")[0]}streams/${this.id}/${
               this.analyticType
             }`,
             { age: { seconds: 60 }, extensions: ".ts" }
@@ -77,7 +81,9 @@ class Stream {
       })
       .on("start", () => {
         findRemoveSync(
-          `${__dirname.split("api")[0]}streams/${this.id}/${this.analyticType}`,
+          `${__dirname.split("dist")[0]}streams/${this.id}/${
+            this.analyticType
+          }`,
           {
             extensions: [".ts", ".m3u8"],
           }
@@ -87,7 +93,9 @@ class Stream {
       .on("end", () => {
         console.log("end");
         findRemoveSync(
-          `${__dirname.split("api")[0]}streams/${this.id}/${this.analyticType}`,
+          `${__dirname.split("dist")[0]}streams/${this.id}/${
+            this.analyticType
+          }`,
           {
             extensions: [".ts", ".m3u8"],
           }
@@ -96,19 +104,32 @@ class Stream {
   }
 
   public run() {
-    if (this.ffmpeg instanceof Ffmpeg)
-      this.ffmpeg.save(
-        `${__dirname.split("api")[0]}streams/${this.id}/${
-          this.analyticType
-        }/output.m3u8`
+    // check if directory exists and create them
+    if (!fs.existsSync(`${__dirname.split("dist")[0]}streams/${this.id}`))
+      fs.mkdirSync(`${__dirname.split("dist")[0]}streams/${this.id}`);
+
+    if (
+      !fs.existsSync(
+        `${__dirname.split("dist")[0]}streams/${this.id}/${this.analyticType}`
+      )
+    )
+      fs.mkdirSync(
+        `${__dirname.split("dist")[0]}streams/${this.id}/${this.analyticType}`
       );
+
+    if (this.ffmpeg instanceof Ffmpeg)
+      this.ffmpeg
+        .output(
+          `${__dirname.split("dist")[0]}streams/${this.id}/${
+            this.analyticType
+          }/output.m3u8`
+        )
+        .run();
   }
 
   public kill() {
-    if (this.ffmpeg instanceof Ffmpeg) this.ffmpeg.kill;
+    if (this.ffmpeg instanceof Ffmpeg) this.ffmpeg.kill("SIGKILL");
   }
-
-  _handleError() {}
 }
 
 export default Stream;
