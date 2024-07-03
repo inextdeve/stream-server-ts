@@ -63,8 +63,10 @@ class Stream extends EventEmitter {
       // include all the segments in the list
       .addOption("-hls_list_size", "0")
       .on("error", (error) => {
+        console.log("Handled Error");
+        this.kill();
         this.emit("error", error.message, this.id);
-        console.log("Error", error.message);
+        // console.log("Error", error.message);
       })
       .once("codecData", () => {
         console.log("codec start");
@@ -105,6 +107,7 @@ class Stream extends EventEmitter {
   }
 
   public run() {
+    console.log("It RUN");
     // check if directory exists and create them
     if (!fs.existsSync(`${__dirname.split("dist")[0]}streams/${this.id}`))
       fs.mkdirSync(`${__dirname.split("dist")[0]}streams/${this.id}`);
@@ -128,7 +131,7 @@ class Stream extends EventEmitter {
         .run();
   }
 
-  public async kill() {
+  public kill() {
     if (this.ffmpeg instanceof Ffmpeg) this.ffmpeg.kill("SIGKILL");
   }
 }

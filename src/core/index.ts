@@ -80,8 +80,26 @@ class App {
       try {
         const camera = await this.fetchCamera(id);
 
-        if (!camera || !camera.enabled) {
+        if (camera === null || !camera.enabled) {
           delete this.streams[id];
+          return true;
+        }
+
+        this.streams[camera.id] = new Stream({
+          id: camera.id,
+          analyticType: 0,
+          url: camera.address as string,
+        });
+        removeSubfolders(__dirname.split("dist")[0] + `/streams/${id}/0`);
+        this.streams[camera.id].run();
+      } catch (error) {
+        return false;
+      }
+    } else {
+      try {
+        const camera = await this.fetchCamera(id);
+        // In reality mean if the camera is deleted or disabled
+        if (camera === null || !camera.enabled) {
           return true;
         }
 

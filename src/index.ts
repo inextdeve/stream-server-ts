@@ -12,7 +12,7 @@ import api from "./api/routes/api.js";
 import removeSubfolders from "./utils/utils.js";
 import { streamApp } from "./core/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url)).split("/dist")[0];
+const __dirname = dirname(fileURLToPath(import.meta.url)).split("dist")[0];
 
 dotenv.config();
 
