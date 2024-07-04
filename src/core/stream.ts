@@ -132,7 +132,13 @@ class Stream extends EventEmitter {
   }
 
   public kill() {
-    if (this.ffmpeg instanceof Ffmpeg) this.ffmpeg.kill("SIGKILL");
+    if (this.ffmpeg instanceof Ffmpeg) {
+      try {
+        this.ffmpeg.kill("SIGKILL");
+      } catch (error) {
+        console.log("Handled SGIKILL Error");
+      }
+    }
   }
 }
 
